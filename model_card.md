@@ -1,6 +1,5 @@
 ---
 # Doc / guide: https://huggingface.co/docs/hub/model-cards
-{{ card_data }}
 ---
 
 # Model Card for CKB Cirrhosis Score (CCS)
@@ -11,187 +10,173 @@ The CKB Cirrhosis Score (CCS) is a  risk prediction model for estimating the pro
 
 ### Model Description
 
-<!-- Provide a longer summary of what this model is. -->
+CCS is a penalized multivariable logistic regression model for prediction of cirrhosis, defined primarily by liver stiffness measurement (LSM) ≥13.5 kPa. The final model includes age, sex, body mass index (BMI), diabetes, total cholesterol (TC), high-density lipoprotein cholesterol (HDL-C), aspartate transaminase (AST), γ-glutamyltransferase (GGT), and an interaction between sex and BMI.
 
-{{ model_description | default("", true) }}
-
-- **Developed by:** {{ developers | default("[More Information Needed]", true)}}
-- **Funded by [optional]:** {{ funded_by | default("[More Information Needed]", true)}}
-- **Shared by [optional]:** {{ shared_by | default("[More Information Needed]", true)}}
-- **Model type:** {{ model_type | default("[More Information Needed]", true)}}
-- **Language(s) (NLP):** {{ language | default("[More Information Needed]", true)}}
-- **License:** {{ license | default("[More Information Needed]", true)}}
-- **Finetuned from model [optional]:** {{ base_model | default("[More Information Needed]", true)}}
-
-### Model Sources [optional]
-
-<!-- Provide the basic links for the model. -->
-
-- **Repository:** {{ repo | default("[More Information Needed]", true)}}
-- **Paper [optional]:** {{ paper | default("[More Information Needed]", true)}}
-- **Demo [optional]:** {{ demo | default("[More Information Needed]", true)}}
+The model was designed for practical use in primary care and population-based risk stratification using variables that are widely available in routine clinical settings. In parallel, an ensemble SuperLearner model was built using multiple machine-learning base learners to assess whether substantially better performance could be achieved with a more complex modeling strategy. The simpler CCS performed comparably to the eSL model.
 
 ## Uses
 
-<!-- Address questions around how the model is intended to be used, including the foreseeable users of the model and those affected by the model. -->
-
 ### Direct Use
 
-<!-- This section is for the model use without fine-tuning or plugging into a larger ecosystem/app. -->
+CCS is intended for direct estimation of an individual’s probability of prevalent cirrhosis using routinely measured clinical variables:
 
-{{ direct_use | default("[More Information Needed]", true)}}
+- age  
+- sex  
+- BMI  
+- diabetes status  
+- TC  
+- HDL-C  
+- AST  
+- GGT  
 
-### Downstream Use [optional]
+Potential direct uses include:
 
-<!-- This section is for the model use when fine-tuned for a task, or when plugged into a larger ecosystem/app -->
+- population-level screening and risk stratification
+- prioritizing follow-up liver assessment in primary care or large cohorts
+- supporting epidemiologic studies of cirrhosis risk
 
-{{ downstream_use | default("[More Information Needed]", true)}}
+### Downstream Use
+
+Potential downstream uses include:
+
+- embedding CCS into web tools or electronic clinical decision support systems
+- use as a baseline comparator in future liver disease prediction studies
+- enrichment of higher-risk participants for imaging, elastography, or hepatology referral
+- use as an upstream triage component in broader liver health screening workflows
 
 ### Out-of-Scope Use
 
-<!-- This section addresses misuse, malicious use, and uses that the model will not work well for. -->
+CCS is not intended for:
 
-{{ out_of_scope_use | default("[More Information Needed]", true)}}
+- replacing clinical diagnosis of cirrhosis or specialist evaluation
+- use as the sole basis for treatment decisions
+- use in pediatric populations
+- use in populations with characteristics very different from the development/validation cohorts without additional validation
+- predicting outcomes unrelated to liver disease
+- use when required predictor measurements are missing, measured inconsistently, or obtained under incompatible laboratory standards
 
 ## Bias, Risks, and Limitations
 
-<!-- This section is meant to convey both technical and sociotechnical limitations. -->
+First, the model was developed for cirrhosis defined by liver stiffness thresholds, primarily LSM ≥13.5 kPa, rather than biopsy-confirmed cirrhosis. Performance may vary when alternative clinical definitions are used, although sensitivity analyses using other thresholds showed broadly similar results.
 
-{{ bias_risks_limitations | default("[More Information Needed]", true)}}
+Second, predictor effects were estimated from adult cohorts with different sex distributions, age structures, and metabolic profiles. Model behavior may therefore differ in underrepresented subgroups or in clinical settings with substantially different disease etiologies.
 
 ### Recommendations
 
-<!-- This section is meant to convey recommendations with respect to the bias, risk, and technical limitations. -->
+Users should:
 
-{{ bias_recommendations | default("Users (both direct and downstream) should be made aware of the risks, biases and limitations of the model. More information needed for further recommendations.", true)}}
+- validate and, where needed, recalibrate CCS before deployment in new populations
+- use CCS as a triage or risk-stratification aid rather than a stand-alone diagnostic tool
+- consider local cirrhosis prevalence when interpreting PPV and NPV
+- ensure consistent units and laboratory measurement conventions
+- avoid extrapolating use beyond adult populations and settings similar to the study cohorts without further evidence
 
 ## How to Get Started with the Model
 
-Use the code below to get started with the model.
+Use the linear predictor below and convert it to a probability:
 
-{{ get_started_code | default("[More Information Needed]", true)}}
+```python
+import math
+
+def ccs_probability(age, female, diabetes, bmi, tc, hdl, ast, ggt):
+    def pos_cube(x):
+        return max(x, 0) ** 3
+
+    lp = (
+        -5.239626
+        + 0.046680734 * age
+        - 5.6458036 * female
+        + 0.46411484 * diabetes
+        - 0.16098654 * bmi
+        + 0.0026687438 * pos_cube(bmi - 20.200001)
+        - 0.0049893916 * pos_cube(bmi - 24.200001)
+        + 0.0023206478 * pos_cube(bmi - 28.799999)
+        + female * (
+            0.26032348 * bmi
+            - 0.0031969233 * pos_cube(bmi - 20.200001)
+            + 0.0059768578 * pos_cube(bmi - 24.200001)
+            - 0.0027799345 * pos_cube(bmi - 28.799999)
+        )
+        - 0.1056094 * tc
+        - 0.40231523 * hdl
+        + 0.013602785 * ast
+        + 0.10879714 * ggt
+        - 0.0001017148 * pos_cube(ggt - 13.4)
+        + 0.00013169036 * pos_cube(ggt - 22.3)
+        - 2.9975555e-5 * pos_cube(ggt - 52.5)
+    )
+    return 1 / (1 + math.exp(-lp))
+```
 
 ## Training Details
 
 ### Training Data
 
-<!-- This should link to a Dataset Card, perhaps with a short stub of information on what the training data is all about as well as documentation related to data pre-processing or additional filtering. -->
-
-{{ training_data | default("[More Information Needed]", true)}}
+The main model was developed in the CKB 3rd resurvey, including 23,187 participants. Candidate predictors were chosen a priori based on known or probable cirrhosis risk factors, clinical rationale, primary care usability, and data availabilityy.
 
 ### Training Procedure
 
-<!-- This relates heavily to the Technical Specifications. Content here should link to that section when it is relevant to the training procedure. -->
-
-#### Preprocessing [optional]
-
-{{ preprocessing | default("[More Information Needed]", true)}}
-
-
 #### Training Hyperparameters
 
-- **Training regime:** {{ training_regime | default("[More Information Needed]", true)}} <!--fp32, fp16 mixed precision, bf16 mixed precision, bf16 non-mixed precision, fp16 non-mixed precision, fp8 mixed precision -->
+- **Training regime:** Penalized maximum likelihood estimation for logistic regression; spline terms with up to 2 degrees of freedom for selected continuous predictors; tuning parameters selected by grid search using AIC
 
-#### Speeds, Sizes, Times [optional]
+#### Speeds, Sizes, Times
 
-<!-- This section provides information about throughput, start/end time, checkpoint size if relevant, etc. -->
-
-{{ speeds_sizes_times | default("[More Information Needed]", true)}}
+CCS is a lightweight tabular risk model with minimal computational burden.
 
 ## Evaluation
-
-<!-- This section describes the evaluation protocols and provides the results. -->
 
 ### Testing Data, Factors & Metrics
 
 #### Testing Data
 
-<!-- This should link to a Dataset Card if possible. -->
-
-{{ testing_data | default("[More Information Needed]", true)}}
-
+External validation was conducted in:
+- MHG validation cohort: 167,726 participants
+- NHANES validation cohort: 3,132 participants
+  
 #### Factors
 
-<!-- These are the things the evaluation is disaggregating by, e.g., subpopulations or domains. -->
-
-{{ testing_factors | default("[More Information Needed]", true)}}
+Performance was examined overall and across subgroups.
+- age groups
+- sex
+- alcohol consumption
+- diabetes status
+- fatty liver status
 
 #### Metrics
 
-<!-- These are the evaluation metrics being used, ideally with a description of why. -->
-
-{{ testing_metrics | default("[More Information Needed]", true)}}
+- AUROC with 95% confidence intervals
+- negative predictive value (NPV)
+- calibration intercept and slope
+- integrated calibration index (ICI)
+- E50 and E90
+- continuous net reclassification improvement (NRI)
+- decision-curve net benefit
 
 ### Results
 
-{{ results | default("[More Information Needed]", true)}}
+Internal validation in CKB derivation cohort
+	•	CCS 10-fold cross-validated AUROC: 0.762 (95% CI 0.744, 0.780)
+	•	eSL 10-fold cross-validated AUROC: 0.760 (95% CI 0.742, 0.777)
+	•	CCS NPV: 98.9%
+	•	CCS subgroup AUROC range: 0.732–0.777
+
+External validation in MHG
+	•	CCS AUROC: 0.816 (95% CI 0.799, 0.834)
+	•	eSL AUROC: 0.815 (95% CI 0.796, 0.833)
+	•	LiverRisk AUROC: 0.757 (95% CI 0.735, 0.779)
+	•	APRI AUROC: 0.757 (95% CI 0.735, 0.779)
+	•	Forn’s score AUROC: 0.710 (95% CI 0.688, 0.731)
+	•	FIB-4 AUROC: 0.684 (95% CI 0.661, 0.708)
+	•	CCS NPV: 99.8%
+
+External validation in NHANES
+	•	CCS AUROC: 0.846 (95% CI 0.784, 0.905)
+	•	eSL AUROC: 0.825 (95% CI 0.753, 0.897)
+	•	NFS AUROC: 0.798 (95% CI 0.725, 0.861)
+	•	refitted LiverRisk AUROC: 0.804 (95% CI 0.736, 0.866)
+	•	CCS NPV: 99.4%
 
 #### Summary
 
-{{ results_summary | default("", true) }}
-
-## Model Examination [optional]
-
-<!-- Relevant interpretability work for the model goes here -->
-
-{{ model_examination | default("[More Information Needed]", true)}}
-
-## Environmental Impact
-
-<!-- Total emissions (in grams of CO2eq) and additional considerations, such as electricity usage, go here. Edit the suggested text below accordingly -->
-
-Carbon emissions can be estimated using the [Machine Learning Impact calculator](https://mlco2.github.io/impact#compute) presented in [Lacoste et al. (2019)](https://arxiv.org/abs/1910.09700).
-
-- **Hardware Type:** {{ hardware_type | default("[More Information Needed]", true)}}
-- **Hours used:** {{ hours_used | default("[More Information Needed]", true)}}
-- **Cloud Provider:** {{ cloud_provider | default("[More Information Needed]", true)}}
-- **Compute Region:** {{ cloud_region | default("[More Information Needed]", true)}}
-- **Carbon Emitted:** {{ co2_emitted | default("[More Information Needed]", true)}}
-
-## Technical Specifications [optional]
-
-### Model Architecture and Objective
-
-{{ model_specs | default("[More Information Needed]", true)}}
-
-### Compute Infrastructure
-
-{{ compute_infrastructure | default("[More Information Needed]", true)}}
-
-#### Hardware
-
-{{ hardware_requirements | default("[More Information Needed]", true)}}
-
-#### Software
-
-{{ software | default("[More Information Needed]", true)}}
-
-## Citation [optional]
-
-<!-- If there is a paper or blog post introducing the model, the APA and Bibtex information for that should go in this section. -->
-
-**BibTeX:**
-
-{{ citation_bibtex | default("[More Information Needed]", true)}}
-
-**APA:**
-
-{{ citation_apa | default("[More Information Needed]", true)}}
-
-## Glossary [optional]
-
-<!-- If relevant, include terms and calculations in this section that can help readers understand the model or model card. -->
-
-{{ glossary | default("[More Information Needed]", true)}}
-
-## More Information [optional]
-
-{{ more_information | default("[More Information Needed]", true)}}
-
-## Model Card Authors [optional]
-
-{{ model_card_authors | default("[More Information Needed]", true)}}
-
-## Model Card Contact
-
-{{ model_card_contact | default("[More Information Needed]", true)}}
+CCS demonstrated consistent and strong discrimination for prevalent cirrhosis across internal and external validation cohorts, with AUROC values ranging from 0.762 in internal validation to 0.846 in NHANES. It outperformed or matched conventional non-invasive fibrosis scores and performed similarly to a more complex ensemble SuperLearner benchmark.
