@@ -156,26 +156,26 @@ Performance was examined overall and across subgroups.
 ### Results
 
 Internal validation in CKB derivation cohort
-	•	CCS 10-fold cross-validated AUROC: 0.762 (95% CI 0.744, 0.780)
-	•	eSL 10-fold cross-validated AUROC: 0.760 (95% CI 0.742, 0.777)
-	•	CCS NPV: 98.9%
-	•	CCS subgroup AUROC range: 0.732–0.777
+- CCS 10-fold cross-validated AUROC: 0.762 (95% CI 0.744, 0.780)
+- eSL 10-fold cross-validated AUROC: 0.760 (95% CI 0.742, 0.777)
+- CCS NPV: 98.9%
+- CCS subgroup AUROC range: 0.732–0.777
 
 External validation in MHG
-	•	CCS AUROC: 0.816 (95% CI 0.799, 0.834)
-	•	eSL AUROC: 0.815 (95% CI 0.796, 0.833)
-	•	LiverRisk AUROC: 0.757 (95% CI 0.735, 0.779)
-	•	APRI AUROC: 0.757 (95% CI 0.735, 0.779)
-	•	Forn’s score AUROC: 0.710 (95% CI 0.688, 0.731)
-	•	FIB-4 AUROC: 0.684 (95% CI 0.661, 0.708)
-	•	CCS NPV: 99.8%
+- CCS AUROC: 0.816 (95% CI 0.799, 0.834)
+- eSL AUROC: 0.815 (95% CI 0.796, 0.833)
+- LiverRisk AUROC: 0.757 (95% CI 0.735, 0.779)
+- APRI AUROC: 0.757 (95% CI 0.735, 0.779)
+- Forn’s score AUROC: 0.710 (95% CI 0.688, 0.731)
+- FIB-4 AUROC: 0.684 (95% CI 0.661, 0.708)
+- CCS NPV: 99.8%
 
 External validation in NHANES
-	•	CCS AUROC: 0.846 (95% CI 0.784, 0.905)
-	•	eSL AUROC: 0.825 (95% CI 0.753, 0.897)
-	•	NFS AUROC: 0.798 (95% CI 0.725, 0.861)
-	•	refitted LiverRisk AUROC: 0.804 (95% CI 0.736, 0.866)
-	•	CCS NPV: 99.4%
+- CCS AUROC: 0.846 (95% CI 0.784, 0.905)
+- eSL AUROC: 0.825 (95% CI 0.753, 0.897)
+- NFS AUROC: 0.798 (95% CI 0.725, 0.861)
+- refitted LiverRisk AUROC: 0.804 (95% CI 0.736, 0.866)
+- CCS NPV: 99.4%
 
 #### Summary
 
